@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: message_service_container
+    environment:
+      POSTGRES_DB: networkpro_message_service
+      POSTGRES_USER: message_service
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5457:5432"
+    volumes:
+      - pgdata_message_service:/var/lib/postgresql/data
+    restart: unless-stopped
+volumes:
+  pgdata_message_service:

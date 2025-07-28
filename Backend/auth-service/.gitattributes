@@ -1,0 +1,21 @@
+# Set default text file handling
+* text=auto
+
+# Java files
+*.java text diff=java
+
+# Handle line endings for shell scripts
+*.sh text eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Handle common binary files
+*.jar binary
+*.war binary
+*.ear binary
+
+# Mark Maven wrapper as binary
+.mvn/wrapper/maven-wrapper.jar binary
+
+# Set UTF-8 encoding for properties files
+*.properties text eol=lf working-tree-encoding=UTF-8

@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: jobservice_postgres_container
+    environment:
+      POSTGRES_DB: networkpro_job_service
+      POSTGRES_USER: job_service
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5458:5432"
+    volumes:
+      - jobservice_pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  jobservice_pgdata:

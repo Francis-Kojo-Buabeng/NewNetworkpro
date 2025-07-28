@@ -1,0 +1,47 @@
+<<<<<<< HEAD
+version: "3.8"
+=======
+
+>>>>>>> c725ed53c12d29997f15d402a39501f72ae3b4bb
+
+services:
+  user-service:
+    build: .
+    ports:
+      - "8091:8091"
+    environment:
+
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/networkpro_user_service
+      - SPRING_DATASOURCE_USERNAME=user_service
+<<<<<<< HEAD
+=======
+
+>>>>>>> c725ed53c12d29997f15d402a39501f72ae3b4bb
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - postgres
+    networks:
+      - networkpro-network
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=networkpro_user_service
+      - POSTGRES_USER=user_service
+      - POSTGRES_PASSWORD=password
+    ports:
+      - "5455:5432"  # Host access to DB (e.g., pgAdmin or DBeaver)
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - networkpro-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  networkpro-network:
+    driver: bridge

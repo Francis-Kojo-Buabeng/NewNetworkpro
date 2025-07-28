@@ -1,0 +1,32 @@
+services:
+  db:
+    container_name: networkpro-auth-container
+    image: postgres:15
+    environment:
+      POSTGRES_USER: accomplish
+      POSTGRES_PASSWORD: password
+      PGDATA: /data/postgres
+    volumes:
+      - db:/data/accomplish
+    ports:
+      - "5454:5432"
+    networks:
+      - db
+    restart: unless-stopped
+
+  mailhog:
+    image: mailhog/mailhog
+    container_name: mailhog_container
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # Web UI
+    networks:
+      - db
+    restart: unless-stopped
+
+networks:
+  db:
+    driver: bridge
+
+volumes:
+  db:

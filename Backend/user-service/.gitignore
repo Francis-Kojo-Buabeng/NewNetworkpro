@@ -1,0 +1,35 @@
+# Maven
+/target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# IntelliJ IDEA
+*.iml
+.idea/
+
+# Eclipse
+*.classpath
+*.project
+*.settings/
+
+# VS Code
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment
+.env
+
+# Swagger/OpenAPI generated files
+swagger-ui/
+
+# Others
+*.swp
+*.swo
+
+# Ignore local application properties
+src/main/resources/application-local.properties
