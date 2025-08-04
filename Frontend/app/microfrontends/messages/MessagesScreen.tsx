@@ -13,7 +13,6 @@ import {
   Modal
 } from 'react-native';
 import MessageModal from '../../../components/MessageModal';
-import NewMessageButton from '../../../components/NewMessageButton';
 import ProfileModal from '../../../components/ProfileModal';
 import NotificationModal from '../../../components/NotificationModal';
 import { useCurrentTheme } from '../../../contexts/ThemeContext';

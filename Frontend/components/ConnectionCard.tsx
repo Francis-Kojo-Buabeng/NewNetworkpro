@@ -10,9 +10,10 @@ export interface ConnectionCardProps {
   onIgnore?: () => void;
   onConnect?: () => void;
   onMessage?: () => void;
+  isProcessing?: boolean;
 }
 
-export default function ConnectionCard({ item, theme, onPress, onAccept, onIgnore, onConnect, onMessage }: ConnectionCardProps) {
+export default function ConnectionCard({ item, theme, onPress, onAccept, onIgnore, onConnect, onMessage, isProcessing }: ConnectionCardProps) {
   return (
     <TouchableOpacity
       style={[
@@ -41,37 +42,81 @@ export default function ConnectionCard({ item, theme, onPress, onAccept, onIgnor
 
       {/* Name with checkmark */}
       <View style={styles.nameRow}>
-        <Text style={[styles.connectionName, { color: theme.textColor }]} numberOfLines={1}> 
+        <Text 
+          style={[styles.connectionName, { color: theme.textColor }]} 
+          numberOfLines={1}
+          ellipsizeMode="tail"
+        > 
           {item.name}
         </Text>
         <MaterialCommunityIcons name="check-circle" size={14} color={theme.primaryColor} />
       </View>
 
       {/* Title/Description */}
-      <Text style={[styles.connectionTitle, { color: theme.textSecondaryColor }]} numberOfLines={2}> 
+      <Text 
+        style={[styles.connectionTitle, { color: theme.textSecondaryColor }]} 
+        numberOfLines={2}
+        ellipsizeMode="tail"
+      > 
         {item.title}
       </Text>
 
       {/* Mutual Connections with small avatar */}
       <View style={styles.mutualConnectionsRow}>
         <Image source={item.avatar} style={styles.smallAvatar} />
-        <Text style={[styles.mutualConnections, { color: theme.textTertiaryColor }]} numberOfLines={1}> 
+        <Text 
+          style={[styles.mutualConnections, { color: theme.textTertiaryColor }]} 
+          numberOfLines={1}
+          ellipsizeMode="tail"
+        > 
           {item.mutualConnections} mutual connections
         </Text>
       </View>
 
-      {/* Connect Button at Bottom */}
-      {!item.isPending ? (
+      {/* Connect Button - LinkedIn Style Logic */}
+      {item.isConnected ? (
+        // Connected State
+        <View style={[styles.connectButton, { borderColor: theme.successColor, backgroundColor: theme.successColor }]}>
+          <Text style={[styles.connectButtonText, { color: 'white' }]}>Connected</Text>
+        </View>
+      ) : item.isPending && item.isPendingReceived ? (
+        // Pending State - Show Accept/Ignore buttons (only for received requests)
+        <View style={styles.pendingButtonsContainer}>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.acceptButton, { backgroundColor: theme.primaryColor }]}
+            onPress={(e) => { e.stopPropagation(); onAccept && onAccept(); }}
+            disabled={isProcessing}
+          >
+            <Text style={[styles.actionButtonText, { color: 'white' }]}>
+              {isProcessing ? 'Accepting...' : 'Accept'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.ignoreButton, { borderColor: theme.borderColor }]}
+            onPress={(e) => { e.stopPropagation(); onIgnore && onIgnore(); }}
+            disabled={isProcessing}
+          >
+            <Text style={[styles.actionButtonText, { color: theme.textSecondaryColor }]}>
+              {isProcessing ? 'Ignoring...' : 'Ignore'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      ) : item.isPending ? (
+        // Pending State - Show "Pending" button (for sent requests)
+        <View style={[styles.connectButton, { borderColor: theme.borderColor, backgroundColor: theme.surfaceColor, opacity: 0.6 }]}>
+          <Text style={[styles.connectButtonText, { color: theme.textSecondaryColor }]}>Pending</Text>
+        </View>
+      ) : (
+        // Initial State - Connect Button
         <TouchableOpacity
           style={[styles.connectButton, { borderColor: theme.primaryColor }]}
           onPress={(e) => { e.stopPropagation(); onConnect && onConnect(); }}
+          disabled={isProcessing}
         >
-          <Text style={[styles.connectButtonText, { color: theme.primaryColor }]}>Connect</Text>
+          <Text style={[styles.connectButtonText, { color: theme.primaryColor }]}>
+            {isProcessing ? 'Sending...' : 'Connect'}
+          </Text>
         </TouchableOpacity>
-      ) : (
-        <View style={[styles.connectButton, { borderColor: theme.primaryColor, backgroundColor: theme.surfaceColor, opacity: 0.6 }]}> 
-          <Text style={[styles.connectButtonText, { color: theme.primaryColor }]}>Pending</Text>
-        </View>
       )}
     </TouchableOpacity>
   );
@@ -140,24 +185,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 4,
     gap: 4,
+    width: '100%',
+    justifyContent: 'center',
   },
   connectionName: {
-    fontSize: 18, // larger
+    fontSize: 16, // slightly smaller for better fit
     fontWeight: 'bold',
     textAlign: 'center',
+    flex: 1, // take available space
+    maxWidth: '85%', // leave space for checkmark
   },
   connectionTitle: {
-    fontSize: 14, // larger
+    fontSize: 13, // slightly smaller for better fit
     fontWeight: '400',
     marginBottom: 8,
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 16,
+    width: '100%',
   },
   mutualConnectionsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
     gap: 4,
+    width: '100%',
+    justifyContent: 'center',
   },
   smallAvatar: {
     width: 16,
@@ -165,7 +217,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   mutualConnections: {
-    fontSize: 13, // larger
+    fontSize: 12, // slightly smaller for better fit
+    flex: 1,
+    textAlign: 'center',
   },
   connectButton: {
     paddingHorizontal: 18, // larger
@@ -179,5 +233,29 @@ const styles = StyleSheet.create({
     fontSize: 15, // larger
     fontWeight: '600',
     textAlign: 'center',
+  },
+  pendingButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  actionButton: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  acceptButton: {
+    // Styles handled inline
+  },
+  ignoreButton: {
+    // Styles handled inline
+  },
+  actionButtonText: {
+    fontSize: 10,
+    fontWeight: '600',
   },
 }); 

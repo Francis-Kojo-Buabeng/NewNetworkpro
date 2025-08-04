@@ -11,7 +11,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/connections")
+@RequestMapping("/api/v1/connections")
 public class ConnectionController {
     @Autowired
     private ConnectionService connectionService;

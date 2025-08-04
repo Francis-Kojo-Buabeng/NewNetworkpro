@@ -31,7 +31,7 @@ export default function ImageWithFallback({
   const [currentSource, setCurrentSource] = useState(source);
 
   // Determine if source is a remote URI
-  const isRemoteUri = typeof source === 'object' && source.uri && typeof source.uri === 'string' && source.uri.startsWith('http');
+  const isRemoteUri = typeof source === 'object' && source?.uri && typeof source.uri === 'string' && source.uri.startsWith('http');
 
   useEffect(() => {
     if (isRemoteUri && source.uri && typeof source.uri === 'string') {

@@ -52,7 +52,7 @@ interface Post {
   image?: any;
   images?: any[];
   video?: {
-    uri: string;
+    uri: string | number;
     thumbnail: any;
     duration: string;
   };
@@ -158,11 +158,11 @@ const posts: Post[] = [
     avatar: getProfilePicture('Lisa Rodriguez'),
     company: 'Creative Studios',
     time: '15m ago',
-    content: '🎬 New tutorial alert! Just created this comprehensive guide on React Native state management. Learn how to properly handle state with hooks and context. Perfect for beginners and intermediate developers! #ReactNative #StateManagement #MobileDevelopment #CodingTutorial',
+    content: '🎬 Excited to share our latest NetworkPro tutorial! Learn how to build meaningful professional connections and grow your network effectively. This comprehensive guide covers everything from profile optimization to networking strategies. Perfect for professionals looking to enhance their networking skills! #NetworkPro #ProfessionalNetworking #CareerGrowth #NetworkingTips',
     video: {
-      uri: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+      uri: require('@/assets/videos/post-vidoes/networkpro video-1.mp4'),
       thumbnail: require('@/assets/images/profile-pictures/image-03.jpg'),
-      duration: '4:12',
+      duration: '3:45',
     },
     likes: 35,
     comments: 22,
@@ -176,7 +176,7 @@ const posts: Post[] = [
     time: '2h ago',
     content: '🎬 Discover the power of professional networking with NetworkPro! Watch how our app helps you build meaningful connections, discover job opportunities, and grow your career. From smart profile matching to real-time messaging, see how NetworkPro is revolutionizing professional networking. Experience the features that make networking effortless and effective. #NetworkPro #ProfessionalNetworking #CareerGrowth #SmartConnections',
     video: {
-      uri: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+      uri: require('@/assets/videos/post-vidoes/networkpro video-2.mp4'),
       thumbnail: require('@/assets/images/networkpro-logo.png'),
       duration: '2:45',
     },
@@ -695,6 +695,37 @@ export default function HomeScreen({ userAvatar, createdProfile, navigation, set
           userAvatar={userAvatar}
         />
 
+        {/* Profile Completion Prompt for Incomplete Profiles */}
+        {createdProfile && (!createdProfile.firstName || createdProfile.firstName.trim() === '') && (
+          <View style={[styles.profileCompletionPrompt, { backgroundColor: theme.primaryColor + '15', borderColor: theme.primaryColor }]}>
+            <View style={styles.profileCompletionContent}>
+              <MaterialCommunityIcons name="account-edit" size={24} color={theme.primaryColor} />
+              <View style={styles.profileCompletionText}>
+                <Text style={[styles.profileCompletionTitle, { color: theme.primaryColor }]}>
+                  Complete your profile
+                </Text>
+                <Text style={[styles.profileCompletionSubtitle, { color: theme.textSecondaryColor }]}>
+                  Add your name and details to get the most out of Networkpro
+                </Text>
+              </View>
+            </View>
+            <TouchableOpacity 
+              style={[styles.completeProfileButton, { backgroundColor: theme.primaryColor }]}
+              onPress={() => {
+                if (navigation) {
+                  navigation.navigate('Profile');
+                } else {
+                  setCurrentScreen?.('profilesetup');
+                }
+              }}
+            >
+              <Text style={[styles.completeProfileButtonText, { color: 'white' }]}>
+                Complete Profile
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* LinkedIn-style Quick Actions */}
         <View style={styles.section}>
           <View style={[styles.quickActionsContainer, { backgroundColor: theme.cardColor }]}>
@@ -792,7 +823,7 @@ export default function HomeScreen({ userAvatar, createdProfile, navigation, set
       {/* Video Player Modal */}
       {selectedVideo && (
         <VideoPlayer
-          source={selectedVideo}
+          source={selectedVideo.uri}
           onClose={() => {
             setVideoPlayerVisible(false);
             setSelectedVideo(null);
@@ -809,14 +840,15 @@ export default function HomeScreen({ userAvatar, createdProfile, navigation, set
       {meModalVisible && (
       <Modal visible={meModalVisible} animationType="slide" onRequestClose={() => setMeModalVisible(false)}>
           <MyProfileScreen
+            key={createdProfile?.headerImage || 'no-banner'} // Force re-render when headerImage changes
             profile={createdProfile ? {
               id: createdProfile.id?.toString() || '',
               name: createdProfile.firstName + ' ' + createdProfile.lastName,
               title: createdProfile.headline || '',
               company: createdProfile.currentCompany || '',
               location: createdProfile.location || '',
-              avatar: createdProfile.avatarUri ? { uri: createdProfile.avatarUri } : require('@/assets/images/Avator-Image.jpg'),
-              headerImage: undefined,
+              avatar: createdProfile.profilePictureUrl ? { uri: createdProfile.profilePictureUrl } : require('@/assets/images/Avator-Image.jpg'),
+              headerImage: createdProfile.headerImage,
               about: createdProfile.summary || '',
               experience: createdProfile.workExperience || [],
               education: createdProfile.education || [],
@@ -843,6 +875,14 @@ export default function HomeScreen({ userAvatar, createdProfile, navigation, set
               followers: 0,
             }}
             onBack={() => setMeModalVisible(false)}
+            onProfileChange={(updatedProfile) => {
+              console.log('HomeScreen - Profile updated from MyProfileScreen:', updatedProfile);
+              console.log('HomeScreen - Previous createdProfile:', createdProfile);
+              console.log('HomeScreen - Updated headerImage:', updatedProfile.headerImage);
+              console.log('HomeScreen - setCreatedProfile function available:', !!setCreatedProfile);
+              setCreatedProfile(updatedProfile);
+              console.log('HomeScreen - setCreatedProfile called with updated profile');
+            }}
           />
         <TouchableOpacity style={{ position: 'absolute', top: 40, right: 24, zIndex: 100 }} onPress={() => setMeModalVisible(false)}>
           <MaterialCommunityIcons name="close" size={32} color="#222" />
@@ -1257,5 +1297,40 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
     borderRadius: 20,
     padding: 4,
+  },
+  profileCompletionPrompt: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  profileCompletionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  profileCompletionText: {
+    marginLeft: 12,
+  },
+  profileCompletionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  profileCompletionSubtitle: {
+    fontSize: 14,
+  },
+  completeProfileButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  completeProfileButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 }); 

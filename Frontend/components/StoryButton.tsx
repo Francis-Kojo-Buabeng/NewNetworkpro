@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import StoryCreationScreen from '../app/microfrontends/story/StoryCreationScreen';
 import { Story as StoryType, useStories } from '../contexts/StoriesContext';
 import { useCurrentTheme } from '../contexts/ThemeContext';
 import UserProfileModal from './UserProfileModal';
@@ -22,7 +21,6 @@ interface StoryButtonProps {
 export default function StoryButton({ story, onPress, isUserStory = false }: StoryButtonProps) {
   const theme = useCurrentTheme();
   const { markStoryViewed } = useStories();
-  const [showStoryCreation, setShowStoryCreation] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
 
   // Mock user data for profile modal
@@ -57,9 +55,7 @@ export default function StoryButton({ story, onPress, isUserStory = false }: Sto
   });
 
   const handleStoryPress = () => {
-    if (isUserStory) {
-      setShowStoryCreation(true);
-    } else if (story.media || story.text) {
+    if (story.media || story.text) {
       markStoryViewed(story.id);
       // TODO: Open story viewer modal here
     } else {
@@ -68,11 +64,6 @@ export default function StoryButton({ story, onPress, isUserStory = false }: Sto
     if (onPress) {
       onPress();
     }
-  };
-
-  const handleStoryCreated = () => {
-    setShowStoryCreation(false);
-    // You can add logic here to refresh stories or update UI
   };
 
   return (
@@ -101,10 +92,7 @@ export default function StoryButton({ story, onPress, isUserStory = false }: Sto
           ) : (
             <View style={styles.avatarBorder}>
               <Image source={story.avatar} style={styles.avatar} />
-              {/* Add button for user's story */}
-              <View style={styles.addStoryButton}>
-                <MaterialCommunityIcons name="plus" size={16} color="#fff" />
-              </View>
+              {/* Remove add button for user's story */}
             </View>
           )}
         </View>
@@ -112,13 +100,6 @@ export default function StoryButton({ story, onPress, isUserStory = false }: Sto
           {story.userName}
         </Text>
       </TouchableOpacity>
-      
-      {/* Story Creation Screen */}
-      <StoryCreationScreen
-        visible={showStoryCreation}
-        onClose={() => setShowStoryCreation(false)}
-        onStoryCreated={handleStoryCreated}
-      />
 
       {/* User Profile Modal */}
       <UserProfileModal
@@ -184,19 +165,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 2,
     elevation: 3,
-  },
-  addStoryButton: {
-    position: 'absolute',
-    bottom: 6,
-    right: 6,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: '#1877F2',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#fff',
   },
   grayRing: {
     width: 74,

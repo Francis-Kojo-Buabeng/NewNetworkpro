@@ -1,6 +1,6 @@
 // authAPI.ts
 
-const AUTH_API_BASE_URL = 'http://10.232.142.14:8090/api/v1/authentication';
+import { AUTH_API_BASE_URL } from '../constants/Config';
 
 export interface AuthRequest {
   email: string;

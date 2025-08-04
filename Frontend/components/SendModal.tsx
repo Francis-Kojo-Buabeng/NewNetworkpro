@@ -32,6 +32,7 @@ interface SendModalProps {
   postId: string | number;
   postAuthor: string;
   postContent: string;
+  postAvatar?: any;
 }
 
 export default function SendModal({
@@ -40,6 +41,7 @@ export default function SendModal({
   postId,
   postAuthor,
   postContent,
+  postAvatar,
 }: SendModalProps) {
   const theme = useCurrentTheme();
   const [searchQuery, setSearchQuery] = useState('');
@@ -197,12 +199,17 @@ export default function SendModal({
         {/* Post Preview */}
         <View style={[styles.postPreview, { backgroundColor: theme.cardColor }]}>
           <View style={styles.previewHeader}>
-            <Text style={[styles.previewAuthor, { color: theme.textColor }]}>
-              {postAuthor}
-            </Text>
-            <Text style={[styles.previewContent, { color: theme.textSecondaryColor }]}>
-              {postContent.length > 100 ? `${postContent.substring(0, 100)}...` : postContent}
-            </Text>
+            {postAvatar && (
+              <Image source={postAvatar} style={styles.previewAvatar} />
+            )}
+            <View style={styles.previewInfo}>
+              <Text style={[styles.previewAuthor, { color: theme.textColor }]}>
+                {postAuthor}
+              </Text>
+              <Text style={[styles.previewContent, { color: theme.textSecondaryColor }]}>
+                {postContent.length > 100 ? `${postContent.substring(0, 100)}...` : postContent}
+              </Text>
+            </View>
           </View>
         </View>
 
@@ -296,7 +303,18 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0,0,0,0.1)',
   },
   previewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 8,
+  },
+  previewAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+  },
+  previewInfo: {
+    flex: 1,
   },
   previewAuthor: {
     fontSize: 16,

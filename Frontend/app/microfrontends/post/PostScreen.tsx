@@ -23,7 +23,6 @@ import EventModal from './EventModal';
 import CelebrationModal from './CelebrationModal';
 import Snackbar from '../../../components/Snackbar';
 import { usePosts } from '../../contexts/PostsContext';
-import VideoPlayer from '../../../components/VideoPlayer';
 import * as VideoThumbnails from 'expo-video-thumbnails';
 import MyProfileScreen from '../profile/MyProfileScreen';
 

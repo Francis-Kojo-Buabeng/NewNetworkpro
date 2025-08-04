@@ -30,6 +30,8 @@ interface JobCardProps {
   onSaveToggle?: (jobId: string) => void;
   onApply?: (jobId: string) => void;
   onAvatarPress?: () => void;
+  isProcessing?: boolean;
+  isApplied?: boolean;
 }
 
 export default function JobCard({ 
@@ -38,7 +40,9 @@ export default function JobCard({
   onCompanyPress, 
   onSaveToggle, 
   onApply, 
-  onAvatarPress 
+  onAvatarPress,
+  isProcessing = false,
+  isApplied = false
 }: JobCardProps) {
   const theme = useCurrentTheme();
 
@@ -69,6 +73,7 @@ export default function JobCard({
         <TouchableOpacity 
           onPress={() => onSaveToggle?.(job.id)}
           style={styles.saveButton}
+          disabled={isProcessing}
         >
           <MaterialCommunityIcons 
             name={job.isSaved ? "bookmark" : "bookmark-outline"} 
@@ -103,19 +108,47 @@ export default function JobCard({
       </View>
       
       <View style={styles.applyContainer}>
+        {isApplied ? (
+          // Applied state
+          <View style={[styles.appliedButton, { backgroundColor: theme.successColor }]}>
+            <MaterialCommunityIcons name="check-circle" size={16} color="white" />
+            <Text style={[styles.appliedButtonText, { color: 'white' }]}>Applied</Text>
+          </View>
+        ) : (
+          // Apply button
+          <TouchableOpacity 
+            style={[
+              styles.applyButton, 
+              { 
+                backgroundColor: isProcessing ? theme.borderColor : theme.primaryColor,
+                opacity: isProcessing ? 0.6 : 1
+              }
+            ]}
+            activeOpacity={0.8}
+            onPress={() => onApply?.(job.id)}
+            disabled={isProcessing}
+          >
+            <Text style={[styles.applyButtonText, { color: '#fff' }]}>
+              {isProcessing ? 'Applying...' : 'Apply'}
+            </Text>
+          </TouchableOpacity>
+        )}
+        
         <TouchableOpacity 
-          style={[styles.applyButton, { backgroundColor: theme.primaryColor }]}
-          activeOpacity={0.8}
-          onPress={() => onApply?.(job.id)}
-        >
-          <Text style={[styles.applyButtonText, { color: '#fff' }]}>Apply</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.saveJobButton, { borderColor: theme.primaryColor }]}
+          style={[
+            styles.saveJobButton, 
+            { 
+              borderColor: theme.primaryColor,
+              opacity: isProcessing ? 0.6 : 1
+            }
+          ]}
           activeOpacity={0.8}
           onPress={() => onSaveToggle?.(job.id)}
+          disabled={isProcessing}
         >
-          <Text style={[styles.saveJobText, { color: theme.primaryColor }]}>Save</Text>
+          <Text style={[styles.saveJobText, { color: theme.primaryColor }]}>
+            {isProcessing ? 'Saving...' : 'Save'}
+          </Text>
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -236,6 +269,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   saveJobText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  appliedButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 8,
+    gap: 8,
+  },
+  appliedButtonText: {
     fontSize: 14,
     fontWeight: '600',
   },

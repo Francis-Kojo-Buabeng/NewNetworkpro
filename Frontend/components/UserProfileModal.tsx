@@ -65,16 +65,28 @@ export default function UserProfileModal({
           {/* Profile Header */}
           <View style={styles.profileHeader}>
             <Image source={user.avatar} style={styles.profileAvatar} />
-            <Text style={[styles.profileName, { color: theme.textColor }]}>
+            <Text 
+              style={[styles.profileName, { color: theme.textColor }]}
+              numberOfLines={2}
+              ellipsizeMode="tail"
+            >
               {user.name}
             </Text>
             {user.title && (
-              <Text style={[styles.profileTitle, { color: theme.textSecondaryColor }]}>
+              <Text 
+                style={[styles.profileTitle, { color: theme.textSecondaryColor }]}
+                numberOfLines={2}
+                ellipsizeMode="tail"
+              >
                 {user.title}
               </Text>
             )}
             {user.company && (
-              <Text style={[styles.profileCompany, { color: theme.textSecondaryColor }]}>
+              <Text 
+                style={[styles.profileCompany, { color: theme.textSecondaryColor }]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
                 {user.company}
               </Text>
             )}
@@ -236,17 +248,22 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   profileName: {
-    fontSize: 24,
+    fontSize: 22, // slightly smaller for better fit
     fontWeight: '600',
     marginBottom: 8,
+    lineHeight: 26,
+    textAlign: 'center',
   },
   profileTitle: {
-    fontSize: 16,
+    fontSize: 15, // slightly smaller for better fit
     marginBottom: 4,
+    lineHeight: 18,
+    textAlign: 'center',
   },
   profileCompany: {
-    fontSize: 14,
+    fontSize: 13, // slightly smaller for better fit
     marginBottom: 8,
+    textAlign: 'center',
   },
   locationContainer: {
     flexDirection: 'row',

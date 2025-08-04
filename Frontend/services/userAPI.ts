@@ -1,9 +1,12 @@
 // userAPI.ts
 
-export const API_BASE_URL = 'http://10.232.142.14:8092/api/v1/users'; // Updated to use your local IP address
+import { USER_API_BASE_URL } from '../constants/Config';
 import { ImageOptimizationService, ImageUrlUtils } from './imageOptimization';
 
+export const API_BASE_URL = USER_API_BASE_URL; // Using centralized configuration
+
 export interface UserProfilePayload {
+  email?: string; // Add email field
   firstName: string;
   lastName: string;
   headline?: string;
@@ -18,6 +21,8 @@ export interface UserProfilePayload {
 }
 
 export async function createUserProfile(payload: UserProfilePayload) {
+  console.log('userAPI - createUserProfile called with payload:', payload);
+  
   const response = await fetch(API_BASE_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -25,9 +30,12 @@ export async function createUserProfile(payload: UserProfilePayload) {
   });
   if (!response.ok) {
     const error = await response.text();
+    console.error('userAPI - Create profile failed:', error);
     throw new Error(error || 'Failed to create user profile');
   }
-  return response.json();
+  const data = await response.json();
+  console.log('userAPI - Created profile response:', data);
+  return data;
 }
 
 export async function fetchUserProfile(userId: string | number) {

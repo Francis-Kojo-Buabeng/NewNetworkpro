@@ -40,7 +40,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<String> handleDataIntegrityViolationException(DataIntegrityViolationException e) {
-        String message = "A required field is missing or invalid. Please ensure all required fields are provided and valid in your request body (e.g., name, issuingOrganization, dates, etc.). If the problem persists, check your data types and constraints.";
+        String message;
+        if (e.getMessage() != null && e.getMessage().toLowerCase().contains("email")) {
+            message = "A profile with this email already exists. Please sign in instead or use a different email address.";
+        } else {
+            message = "A required field is missing or invalid. Please ensure all required fields are provided and valid in your request body. If the problem persists, check your data types and constraints.";
+        }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(message);
     }
 

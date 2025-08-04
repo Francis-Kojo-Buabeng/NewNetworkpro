@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import ThemedLogo from '../../components/ThemedLogo';
 import { useCurrentTheme, useTheme } from '../../contexts/ThemeContext';
@@ -23,6 +23,13 @@ export default function SignUpScreen({ onContinue, onBack, onSignIn }: SignUpScr
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Debug logging for error state changes
+  useEffect(() => {
+    if (error) {
+      console.log('SignUpScreen - Error state changed to:', error);
+    }
+  }, [error]);
 
 
 
@@ -83,8 +90,10 @@ export default function SignUpScreen({ onContinue, onBack, onSignIn }: SignUpScr
       onContinue();
     } catch (err: any) {
       setLoading(false);
-      setError(err.message || 'Network request failed');
+      const errorMessage = err.message || 'Network request failed';
+      setError(errorMessage);
       console.log('SignUpScreen - Registration error:', err);
+      console.log('SignUpScreen - Setting error message:', errorMessage);
     }
   };
 

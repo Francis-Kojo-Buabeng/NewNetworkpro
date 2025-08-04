@@ -40,6 +40,7 @@ export default function MyProfileScreen(props: MyProfileScreenProps) {
     skills: [] as string[],
   });
   const [snackbar, setSnackbar] = useState<{ visible: boolean; message: string; type?: 'success' | 'error' | 'info' }>({ visible: false, message: '', type: 'info' });
+  const [error, setError] = useState<string | null>(null);
 
   // Fetch optimized profile data on mount or when profile.id changes
   useEffect(() => {
@@ -133,7 +134,7 @@ export default function MyProfileScreen(props: MyProfileScreenProps) {
         }
       } catch (error) {
         console.error('MyProfileScreen - Failed to load profile data:', error);
-        setSnackbar({ visible: true, message: 'Failed to load profile data', type: 'error' });
+        setError('Failed to load profile data');
       } finally {
         setIsLoading(false);
       }
@@ -180,9 +181,10 @@ export default function MyProfileScreen(props: MyProfileScreenProps) {
 
   // Handler for choosing from gallery
   const handleChooseFromGallery = async () => {
+    setError(null);
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      setSnackbar({ visible: true, message: 'Permission to access gallery is required!', type: 'error' });
+      setError('Permission to access gallery is required!');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -198,9 +200,10 @@ export default function MyProfileScreen(props: MyProfileScreenProps) {
 
   // Handler for taking photo
   const handleTakePhoto = async () => {
+    setError(null);
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      setSnackbar({ visible: true, message: 'Permission to access camera is required!', type: 'error' });
+      setError('Permission to access camera is required!');
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
@@ -214,8 +217,9 @@ export default function MyProfileScreen(props: MyProfileScreenProps) {
   };
 
   const handleUploadProfilePicture = async (imageUri: string) => {
+    setError(null);
     if (!profileData?.id) {
-      setSnackbar({ visible: true, message: 'Profile ID not found', type: 'error' });
+      setError('Profile ID not found');
       return;
     }
 
@@ -238,10 +242,10 @@ export default function MyProfileScreen(props: MyProfileScreenProps) {
         
         setSnackbar({ visible: true, message: 'Profile picture uploaded successfully!', type: 'success' });
       } else {
-        setSnackbar({ visible: true, message: uploadResult.error || 'Failed to upload avatar', type: 'error' });
+        setError(uploadResult.error || 'Failed to upload avatar');
       }
     } catch (error: any) {
-      setSnackbar({ visible: true, message: error.message || 'Failed to upload profile picture', type: 'error' });
+      setError(error.message || 'Failed to upload profile picture');
     }
   };
 
@@ -338,65 +342,7 @@ export default function MyProfileScreen(props: MyProfileScreenProps) {
     }
   };
 
-  const handleBannerChange = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      setSnackbar({ visible: true, message: 'Permission to access gallery is required!', type: 'error' });
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [3, 1],
-      quality: 1,
-    });
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      try {
-        const uploadResult = await ImageService.uploadBanner(profileData!.id, result.assets[0].uri);
-        if (uploadResult.success && uploadResult.url) {
-          console.log('MyProfileScreen - Banner upload successful, URL returned:', uploadResult.url);
-          
-          // Update cache immediately with the new banner URL
-          await ProfileDataService.updateProfileAfterImageUpload(profileData!.id, 'banner', uploadResult.url);
-          
-          // Notify ProfileContext about the header image change
-          updateHeaderImage(uploadResult.url);
-          
-          // Update local state immediately with the new banner URL
-          if (profileData) {
-            const updatedProfileData: OptimizedProfileData = {
-              ...profileData,
-              bannerUrl: uploadResult.url,
-              rawProfile: {
-                ...profileData.rawProfile,
-                headerImage: uploadResult.url
-              }
-            };
-            setProfileData(updatedProfileData);
-          }
-          
-          // Also refresh from API to ensure consistency
-          try {
-            const refreshedData = await ProfileDataService.refreshProfileData(profileData!.id);
-            setProfileData(refreshedData);
-            
-            if (props.onProfileChange) {
-              props.onProfileChange(refreshedData.rawProfile);
-            }
-          } catch (refreshError) {
-            console.error('MyProfileScreen - Failed to refresh profile data after banner upload:', refreshError);
-            // Keep the local update even if refresh fails
-          }
-          
-          setSnackbar({ visible: true, message: 'Banner image uploaded successfully!', type: 'success' });
-        } else {
-          setSnackbar({ visible: true, message: uploadResult.error || 'Failed to upload banner', type: 'error' });
-        }
-      } catch (error: any) {
-        setSnackbar({ visible: true, message: error.message || 'Failed to upload banner image', type: 'error' });
-      }
-    }
-  };
+    // Removed handleBannerChange - now using onBannerChange prop from ProfileScreen
 
   const handleDeleteBannerImage = async () => {
     if (!profileData?.id) {
@@ -465,18 +411,58 @@ export default function MyProfileScreen(props: MyProfileScreenProps) {
       headerImage: profileData.rawProfile.headerImage,
     },
     // Pass raw URLs - ImageService will handle processing
-    bannerImage: profileData.rawProfile.headerImage,
-    avatarImage: profileData.rawProfile.profilePictureUrl,
+    bannerImage: props.bannerImage || profileData.rawProfile.headerImage,
+    avatarImage: props.avatarImage || profileData.rawProfile.profilePictureUrl,
   };
+
+    // Debug logging for banner image
+  console.log('MyProfileScreen - Banner image debug:', {
+    propsBannerImage: props.bannerImage,
+    profileDataHeaderImage: profileData.rawProfile.headerImage,
+    finalBannerImage: props.bannerImage || profileData.rawProfile.headerImage,
+    propsAvatarImage: props.avatarImage,
+    profileDataAvatarImage: profileData.rawProfile.profilePictureUrl,
+    finalAvatarImage: props.avatarImage || profileData.rawProfile.profilePictureUrl,
+  });
 
   return (
     <>
       <ProfileScreen
         key={profileData.bannerUrl || profileData.rawProfile.headerImage || 'default-banner'}
         {...profileProps}
-        onBannerChange={handleBannerChange}
+        onBannerChange={async (bannerUrl: string) => {
+          console.log('MyProfileScreen - onBannerChange called with URL:', bannerUrl);
+          // Update local state immediately
+          if (profileData) {
+            const updatedProfileData: OptimizedProfileData = {
+              ...profileData,
+              bannerUrl: bannerUrl,
+              rawProfile: {
+                ...profileData.rawProfile,
+                headerImage: bannerUrl
+              }
+            };
+            setProfileData(updatedProfileData);
+          }
+          
+          // Notify parent component
+          if (props.onProfileChange) {
+            console.log('MyProfileScreen - Calling onProfileChange with banner URL:', bannerUrl);
+            console.log('MyProfileScreen - Current profileData.rawProfile:', profileData?.rawProfile);
+            const updatedProfile = {
+              ...profileData?.rawProfile,
+              headerImage: bannerUrl
+            };
+            console.log('MyProfileScreen - Updated profile being passed:', updatedProfile);
+            props.onProfileChange(updatedProfile);
+          }
+        }}
         onAvatarChange={handleEditAvatar}
       >
+        {(() => {
+          console.log('MyProfileScreen - ProfileScreen props:', { onBannerChange: true, onAvatarChange: !!handleEditAvatar });
+          return null;
+        })()}
         {/* Owner-specific buttons */}
         <View style={{ flexDirection: 'row', alignSelf: 'flex-end', marginBottom: 12, marginRight: 12, gap: 8 }}>
           <TouchableOpacity
@@ -610,7 +596,7 @@ export default function MyProfileScreen(props: MyProfileScreenProps) {
       >
         <PrivacySettingsScreen
           userId={profileData?.id || '1'}
-          onBack={() => setPrivacySettingsVisible(false)}
+          onClose={() => setPrivacySettingsVisible(false)}
         />
       </Modal>
 
@@ -622,7 +608,7 @@ export default function MyProfileScreen(props: MyProfileScreenProps) {
       >
         <ProfileCompletionScreen
           userId={profileData?.id || '1'}
-          onBack={() => setProfileCompletionVisible(false)}
+          onClose={() => setProfileCompletionVisible(false)}
         />
       </Modal>
     </>

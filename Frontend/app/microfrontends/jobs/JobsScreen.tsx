@@ -9,6 +9,7 @@ import {
   RefreshControl,
   Modal,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import ProfileModal from '../../../components/ProfileModal';
 import NotificationModal from '../../../components/NotificationModal';
@@ -24,7 +25,7 @@ import {
 } from './components';
 import Sidebar from '../home/Sidebar';
 import MyProfileScreen from '../profile/MyProfileScreen';
-// Removed invalid import of useProfileContext due to lint error
+import Snackbar from '../../../components/Snackbar';
 
 const { width } = Dimensions.get('window');
 
@@ -105,27 +106,50 @@ const mockJobs: Job[] = [
     type: 'Full-time',
     postedDate: '1 day ago',
     logo: getCompanyLogo('Netflix'),
-    description: 'Develop machine learning algorithms to personalize Netflix recommendations...',
-    requirements: ['Python', 'Machine Learning', 'TensorFlow', 'Big Data', 'Statistics', 'A/B Testing'],
+    description: 'Analyze user behavior and content preferences to improve Netflix\'s recommendation system...',
+    requirements: ['Python', 'Machine Learning', 'SQL', 'Statistics', 'Big Data', 'A/B Testing'],
     isSaved: false,
   },
   {
     id: '6',
-    title: 'Frontend Engineer',
+    title: 'Frontend Developer',
     company: 'Meta',
     location: 'Menlo Park, CA',
     salary: '$130k - $180k',
     type: 'Full-time',
     postedDate: '4 days ago',
     logo: getCompanyLogo('Meta'),
-    description: 'Build the next generation of social media experiences for billions of users...',
-    requirements: ['React', 'JavaScript', 'TypeScript', 'Performance optimization', 'Web technologies'],
-    isSaved: true,
+    description: 'Build engaging user interfaces for Meta\'s social media platforms...',
+    requirements: ['React', 'JavaScript', 'CSS', 'Web development', 'Performance optimization', 'Accessibility'],
+    isSaved: false,
+  },
+  {
+    id: '7',
+    title: 'DevOps Engineer',
+    company: 'Google',
+    location: 'Mountain View, CA',
+    salary: '$140k - $190k',
+    type: 'Full-time',
+    postedDate: '6 days ago',
+    logo: getCompanyLogo('Google'),
+    description: 'Manage Google\'s cloud infrastructure and deployment pipelines...',
+    requirements: ['Docker', 'Kubernetes', 'Google Cloud', 'CI/CD', 'Linux', 'Monitoring'],
+    isSaved: false,
+  },
+  {
+    id: '8',
+    title: 'Mobile Developer',
+    company: 'Apple',
+    location: 'Cupertino, CA',
+    salary: '$130k - $170k',
+    type: 'Full-time',
+    postedDate: '2 weeks ago',
+    logo: getCompanyLogo('Apple'),
+    description: 'Develop native iOS applications for Apple\'s ecosystem...',
+    requirements: ['Swift', 'Objective-C', 'iOS development', 'Xcode', 'Core Data', 'App Store'],
+    isSaved: false,
   },
 ];
-
-const jobTypes = ['All', 'Full-time', 'Part-time', 'Contract', 'Internship'];
-const locations = ['All', 'Remote', 'San Francisco', 'New York', 'Austin', 'Los Angeles'];
 
 interface JobsScreenProps {
   userAvatar?: string | null;
@@ -134,201 +158,62 @@ interface JobsScreenProps {
 
 export default function JobsScreen({ userAvatar, createdProfile }: JobsScreenProps) {
   const theme = useCurrentTheme();
-  const { avatarUrl, profileData } = useProfile();
-  const [selectedJobType, setSelectedJobType] = useState<string>('All');
-  const [selectedLocation, setSelectedLocation] = useState<string>('All');
+  const { updateAvatar } = useProfile();
+  
+  // State management
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [jobs, setJobs] = useState<Job[]>(mockJobs);
-  const [selectedProfile, setSelectedProfile] = useState<any>(null);
+  const [selectedJobType, setSelectedJobType] = useState('All');
+  const [selectedLocation, setSelectedLocation] = useState('All');
+  const [refreshing, setRefreshing] = useState(false);
+  const [showMyProfileModal, setShowMyProfileModal] = useState(false);
+  const [showDashboard, setShowDashboard] = useState(false);
   const [profileModalVisible, setProfileModalVisible] = useState(false);
+  const [selectedProfile, setSelectedProfile] = useState<any>(null);
   const [companyModalVisible, setCompanyModalVisible] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<CompanyProfile | null>(null);
   const [notificationModalVisible, setNotificationModalVisible] = useState(false);
-  const [showDashboard, setShowDashboard] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [showMyProfileModal, setShowMyProfileModal] = useState(false);
+  
+  // Job state management
+  const [jobs, setJobs] = useState<Job[]>(mockJobs);
+  const [appliedJobs, setAppliedJobs] = useState<Set<string>>(new Set());
+  const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set(['2'])); // Job 2 is pre-saved
+  const [snackbar, setSnackbar] = useState<{ visible: boolean; message: string; type?: 'success' | 'error' | 'info' }>({ visible: false, message: '', type: 'info' });
+  const [isProcessingJob, setIsProcessingJob] = useState<string | null>(null);
 
-  // Use ProfileContext data if available, otherwise fall back to createdProfile or mock data
-  const userProfile = useMemo(() => {
-    if (profileData) {
-      return {
-        id: profileData.id,
-        firstName: profileData.firstName,
-        lastName: profileData.lastName,
-        avatarUri: avatarUrl || profileData.profilePictureUrl || null,
-        title: profileData.headline,
-        company: profileData.currentCompany,
-        location: profileData.location,
-        about: profileData.summary,
-        headerImage: profileData.headerImage,
-        experience: profileData.workExperience,
-        education: profileData.education,
-        skills: profileData.skills,
-        mutualConnections: 0,
-        isConnected: false,
-        isOnline: false,
-        isPending: false,
-        isSuggested: false,
-      };
-    }
-    
-    return createdProfile ? {
-      id: createdProfile.id?.toString() || '1',
-      firstName: createdProfile.firstName || 'Your',
-      lastName: createdProfile.lastName || 'Name',
-      avatarUri: createdProfile.profilePictureUrl || userAvatar,
-      title: createdProfile.headline || 'Your Title',
-      company: createdProfile.currentCompany || 'Your Company',
-      location: createdProfile.location || 'Your Location',
-      about: createdProfile.summary || 'About you',
-      headerImage: createdProfile.headerImage || null,
-      experience: createdProfile.workExperience || [],
-      education: createdProfile.education || [],
-      skills: createdProfile.skills || [],
-      mutualConnections: 0,
-      isConnected: false,
-      isOnline: false,
-      isPending: false,
-      isSuggested: false,
-    } : {
-      id: '1', // Mock user ID for MyProfileScreen
-    firstName: 'Your',
-    lastName: 'Name',
-    avatarUri: userAvatar,
-    title: 'Your Title',
-    company: 'Your Company',
-    location: 'Your Location',
-    about: 'About you',
-    headerImage: null,
-    experience: [],
-    education: [],
-    skills: [],
-    mutualConnections: 0,
-    isConnected: false,
-    isOnline: false,
-    isPending: false,
-    isSuggested: false,
-  };
-  }, [profileData, avatarUrl, createdProfile, userAvatar]);
+  // Job types and locations for filters
+  const jobTypes = ['All', 'Full-time', 'Part-time', 'Contract', 'Internship'];
+  const locations = ['All', 'Remote', 'San Francisco, CA', 'New York, NY', 'Seattle, WA', 'Los Angeles, CA'];
 
   const onRefresh = () => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1200);
-  };
-
-  // Company profile data
-  const companyProfiles: { [key: string]: CompanyProfile } = {
-    'Google': {
-      id: '1',
-      name: 'Google',
-      logo: require('@/assets/images/company-logos/Google-logo.webp'),
-      industry: 'Technology',
-      size: '100,000+ employees',
-      location: 'Mountain View, CA',
-      founded: '1998',
-      description: 'Google is a multinational technology company that specializes in Internet-related services and products, which include online advertising technologies, search engine, cloud computing, software, and hardware.',
-      website: 'google.com',
-      activeJobs: 15,
-      employeeCount: '156,500+',
-      revenue: '$307.4B',
-      specialties: ['Search Engine', 'Cloud Computing', 'AI/ML', 'Mobile Technology'],
-      benefits: ['Health Insurance', '401k Matching', 'Free Meals', 'Flexible Work'],
-      recentJobs: mockJobs.filter(job => job.company === 'Google')
-    },
-    'Apple': {
-      id: '2',
-      name: 'Apple',
-      logo: require('@/assets/images/company-logos/Apple-logo.png'),
-      industry: 'Technology',
-      size: '164,000+ employees',
-      location: 'Cupertino, CA',
-      founded: '1976',
-      description: 'Apple Inc. is an American multinational technology company that specializes in consumer electronics, computer software, and online services.',
-      website: 'apple.com',
-      activeJobs: 8,
-      employeeCount: '164,000+',
-      revenue: '$394.3B',
-      specialties: ['Consumer Electronics', 'Software Development', 'Design', 'Retail'],
-      benefits: ['Health Insurance', '401k Matching', 'Employee Discount', 'Stock Options'],
-      recentJobs: mockJobs.filter(job => job.company === 'Apple')
-    },
-    'Microsoft': {
-      id: '3',
-      name: 'Microsoft',
-      logo: require('@/assets/images/company-logos/Microsoft-logo.png'),
-      industry: 'Technology',
-      size: '221,000+ employees',
-      location: 'Redmond, WA',
-      founded: '1975',
-      description: 'Microsoft Corporation is an American multinational technology company which produces computer software, consumer electronics, personal computers, and related services.',
-      website: 'microsoft.com',
-      activeJobs: 12,
-      employeeCount: '221,000+',
-      revenue: '$198.3B',
-      specialties: ['Software Development', 'Cloud Computing', 'Gaming', 'AI/ML'],
-      benefits: ['Health Insurance', '401k Matching', 'Flexible Work', 'Learning Budget'],
-      recentJobs: mockJobs.filter(job => job.company === 'Microsoft')
-    },
-    'Amazon': {
-      id: '4',
-      name: 'Amazon',
-      logo: require('@/assets/images/company-logos/amazon-logo.webp'),
-      industry: 'E-commerce & Technology',
-      size: '1,608,000+ employees',
-      location: 'Seattle, WA',
-      founded: '1994',
-      description: 'Amazon.com, Inc. is an American multinational technology company focusing on e-commerce, cloud computing, digital streaming, and artificial intelligence.',
-      website: 'amazon.com',
-      activeJobs: 20,
-      employeeCount: '1,608,000+',
-      revenue: '$514.0B',
-      specialties: ['E-commerce', 'Cloud Computing', 'Logistics', 'AI/ML'],
-      benefits: ['Health Insurance', '401k Matching', 'Stock Options', 'Career Growth'],
-      recentJobs: mockJobs.filter(job => job.company === 'Amazon')
-    },
-    'Netflix': {
-      id: '5',
-      name: 'Netflix',
-      logo: require('@/assets/images/company-logos/Netflix-logo.png'),
-      industry: 'Entertainment & Technology',
-      size: '12,000+ employees',
-      location: 'Los Gatos, CA',
-      founded: '1997',
-      description: 'Netflix, Inc. is an American subscription streaming service and production company. It offers a library of films and television series.',
-      website: 'netflix.com',
-      activeJobs: 6,
-      employeeCount: '12,000+',
-      revenue: '$31.6B',
-      specialties: ['Streaming', 'Content Production', 'Recommendation Systems', 'Data Science'],
-      benefits: ['Health Insurance', 'Unlimited PTO', 'Flexible Work', 'Content Budget'],
-      recentJobs: mockJobs.filter(job => job.company === 'Netflix')
-    },
-    'Meta': {
-      id: '6',
-      name: 'Meta',
-      logo: require('@/assets/images/company-logos/Meta-logo.png'),
-      industry: 'Technology & Social Media',
-      size: '86,482+ employees',
-      location: 'Menlo Park, CA',
-      founded: '2004',
-      description: 'Meta Platforms, Inc. is an American multinational technology conglomerate. It owns Facebook, Instagram, WhatsApp, and other products.',
-      website: 'meta.com',
-      activeJobs: 10,
-      employeeCount: '86,482+',
-      revenue: '$116.6B',
-      specialties: ['Social Media', 'Virtual Reality', 'AI/ML', 'Mobile Apps'],
-      benefits: ['Health Insurance', '401k Matching', 'Free Food', 'VR Equipment'],
-      recentJobs: mockJobs.filter(job => job.company === 'Meta')
-    },
+    // Simulate API call
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1000);
   };
 
   const handleCompanyPress = (companyName: string) => {
-    const company = companyProfiles[companyName];
-    if (company) {
-      setSelectedCompany(company);
-      setCompanyModalVisible(true);
-    }
+    const companyData: CompanyProfile = {
+      id: companyName.toLowerCase(),
+      name: companyName,
+      logo: getCompanyLogo(companyName),
+      description: `${companyName} is a leading technology company focused on innovation and growth.`,
+      industry: 'Technology',
+      size: '10,000+ employees',
+      founded: '1990s',
+      location: 'Various locations',
+      website: `https://www.${companyName.toLowerCase()}.com`,
+      activeJobs: Math.floor(Math.random() * 50) + 10,
+      employeeCount: '10,000+',
+      revenue: '$10B+',
+      specialties: ['Software Development', 'Cloud Computing', 'AI/ML', 'Mobile Apps'],
+      benefits: ['Health Insurance', '401k Matching', 'Flexible Work', 'Learning Budget'],
+      recentJobs: mockJobs.filter(job => job.company === companyName),
+    };
+    
+    setSelectedCompany(companyData);
+    setCompanyModalVisible(true);
   };
 
   const handleProfilePress = (user: any) => {
@@ -336,16 +221,110 @@ export default function JobsScreen({ userAvatar, createdProfile }: JobsScreenPro
     setProfileModalVisible(true);
   };
 
-  const toggleSaveJob = (jobId: string) => {
-    // This function is not used in the current mock data, so it will not modify the state.
-    // If you were to integrate with a real backend, you would update the job's isSaved status.
+  // Functional save job toggle
+  const toggleSaveJob = async (jobId: string) => {
+    if (isProcessingJob) return; // Prevent multiple simultaneous actions
+    
+    setIsProcessingJob(jobId);
+    console.log('Toggling save for job:', jobId);
+    
+    try {
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const newSavedJobs = new Set(savedJobs);
+      const job = jobs.find(j => j.id === jobId);
+      
+      if (newSavedJobs.has(jobId)) {
+        newSavedJobs.delete(jobId);
+        setSnackbar({ 
+          visible: true, 
+          message: `Removed "${job?.title}" from saved jobs`, 
+          type: 'success' 
+        });
+      } else {
+        newSavedJobs.add(jobId);
+        setSnackbar({ 
+          visible: true, 
+          message: `Saved "${job?.title}" to your job list`, 
+          type: 'success' 
+        });
+      }
+      
+      setSavedJobs(newSavedJobs);
+      
+      // Update jobs state to reflect saved status
+      setJobs(prevJobs => 
+        prevJobs.map(job => 
+          job.id === jobId 
+            ? { ...job, isSaved: newSavedJobs.has(jobId) }
+            : job
+        )
+      );
+      
+    } catch (error) {
+      console.error('Error toggling save job:', error);
+      setSnackbar({ 
+        visible: true, 
+        message: 'Failed to update saved jobs. Please try again.', 
+        type: 'error' 
+      });
+    } finally {
+      setIsProcessingJob(null);
+    }
   };
 
-  const handleApply = (jobId: string) => {
+  // Functional apply to job
+  const handleApply = async (jobId: string) => {
+    if (isProcessingJob) return; // Prevent multiple simultaneous actions
+    
+    setIsProcessingJob(jobId);
     console.log('Applying to job:', jobId);
+    
+    try {
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const job = jobs.find(j => j.id === jobId);
+      
+      if (appliedJobs.has(jobId)) {
+        Alert.alert(
+          'Already Applied',
+          `You have already applied to "${job?.title}" at ${job?.company}.`,
+          [{ text: 'OK' }]
+        );
+      } else {
+        // Add to applied jobs
+        setAppliedJobs(prev => new Set([...prev, jobId]));
+        
+        // Show success message
+        setSnackbar({ 
+          visible: true, 
+          message: `Application sent to ${job?.company}! You'll hear back within 5-7 business days.`, 
+          type: 'success' 
+        });
+        
+        // Show additional info alert
+        Alert.alert(
+          'Application Submitted!',
+          `Your application for "${job?.title}" at ${job?.company} has been submitted successfully.\n\nYou'll receive a confirmation email shortly, and the hiring team will review your application within 5-7 business days.\n\nGood luck!`,
+          [{ text: 'OK' }]
+        );
+      }
+      
+    } catch (error) {
+      console.error('Error applying to job:', error);
+      setSnackbar({ 
+        visible: true, 
+        message: 'Failed to submit application. Please check your connection and try again.', 
+        type: 'error' 
+      });
+    } finally {
+      setIsProcessingJob(null);
+    }
   };
 
-  const filteredJobs = mockJobs.filter(job => {
+  const filteredJobs = jobs.filter(job => {
     const matchesSearch = job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          job.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          job.location.toLowerCase().includes(searchQuery.toLowerCase());
@@ -361,30 +340,41 @@ export default function JobsScreen({ userAvatar, createdProfile }: JobsScreenPro
     return matchesSearch && matchesType && matchesLocation;
   });
 
-  const renderJobCard = ({ item }: { item: Job }) => (
-    <JobCard
-      job={item}
-      onCompanyPress={handleCompanyPress}
-      onSaveToggle={toggleSaveJob}
-      onApply={handleApply}
-      onAvatarPress={() => handleProfilePress({
-        id: item.id,
-        name: item.company,
-        title: item.title,
-        company: item.company,
-        avatar: item.logo,
-        mutualConnections: 0,
-        isOnline: false,
-        isConnected: false,
-        isPending: false,
-        location: item.location,
-        about: item.description,
-        experience: [],
-        education: [],
-        skills: item.requirements || [],
-      })}
-    />
-  );
+  const renderJobCard = ({ item }: { item: Job }) => {
+    // Check if job is saved or applied
+    const isSaved = savedJobs.has(item.id);
+    const isApplied = appliedJobs.has(item.id);
+    
+    return (
+      <JobCard
+        job={{
+          ...item,
+          isSaved: isSaved
+        }}
+        onCompanyPress={handleCompanyPress}
+        onSaveToggle={toggleSaveJob}
+        onApply={handleApply}
+        onAvatarPress={() => handleProfilePress({
+          id: item.id,
+          name: item.company,
+          title: item.title,
+          company: item.company,
+          avatar: item.logo,
+          mutualConnections: 0,
+          isOnline: false,
+          isConnected: false,
+          isPending: false,
+          location: item.location,
+          about: item.description,
+          experience: [],
+          education: [],
+          skills: item.requirements || [],
+        })}
+        isProcessing={isProcessingJob === item.id}
+        isApplied={isApplied}
+      />
+    );
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
@@ -398,6 +388,31 @@ export default function JobsScreen({ userAvatar, createdProfile }: JobsScreenPro
         showFilters={showFilters}
         onNotificationPress={() => setNotificationModalVisible(true)}
       />
+
+      {/* Profile Completion Prompt for Incomplete Profiles */}
+      {createdProfile && (!createdProfile.firstName || createdProfile.firstName.trim() === '') && (
+        <View style={[styles.profileCompletionPrompt, { backgroundColor: theme.primaryColor + '15', borderColor: theme.primaryColor }]}>
+          <View style={styles.profileCompletionContent}>
+            <MaterialCommunityIcons name="account-edit" size={24} color={theme.primaryColor} />
+            <View style={styles.profileCompletionText}>
+              <Text style={[styles.profileCompletionTitle, { color: theme.primaryColor }]}>
+                Complete your profile
+              </Text>
+              <Text style={[styles.profileCompletionSubtitle, { color: theme.textSecondaryColor }]}>
+                Add your name and details to improve job recommendations
+              </Text>
+            </View>
+          </View>
+          <TouchableOpacity 
+            style={[styles.completeProfileButton, { backgroundColor: theme.primaryColor }]}
+            onPress={() => setShowMyProfileModal(true)}
+          >
+            <Text style={[styles.completeProfileButtonText, { color: 'white' }]}>
+              Complete Profile
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Filters */}
       {showFilters && (
@@ -465,14 +480,43 @@ export default function JobsScreen({ userAvatar, createdProfile }: JobsScreenPro
         />
       )}
 
+      {/* My Profile Modal */}
       {showMyProfileModal && (
-        <Modal visible={showMyProfileModal} animationType="slide" onRequestClose={() => setShowMyProfileModal(false)}>
-          <MyProfileScreen profile={userProfile} onBack={() => setShowMyProfileModal(false)} />
-          <TouchableOpacity style={{ position: 'absolute', top: 40, right: 24, zIndex: 100 }} onPress={() => setShowMyProfileModal(false)}>
-            <MaterialCommunityIcons name="close" size={32} color="#222" />
-          </TouchableOpacity>
+        <Modal
+          visible={showMyProfileModal}
+          animationType="slide"
+          presentationStyle="pageSheet"
+        >
+          <MyProfileScreen
+            profile={{
+              id: '1',
+              name: 'Your Name',
+              title: 'Your Title',
+              company: 'Your Company',
+              location: 'Your Location',
+              avatar: userAvatar,
+              headerImage: null,
+              about: 'About you',
+              experience: [],
+              education: [],
+              skills: [],
+              mutualConnections: 0,
+              isConnected: false,
+              isOnline: false,
+              isPending: false,
+              isSuggested: false,
+            }}
+            onBack={() => setShowMyProfileModal(false)}
+          />
         </Modal>
       )}
+
+      <Snackbar
+        visible={snackbar.visible}
+        message={snackbar.message}
+        type={snackbar.type}
+        onHide={() => setSnackbar(prev => ({ ...prev, visible: false }))}
+      />
     </View>
   );
 }
@@ -504,5 +548,40 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     paddingHorizontal: 40,
+  },
+  profileCompletionPrompt: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  profileCompletionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  profileCompletionText: {
+    marginLeft: 12,
+  },
+  profileCompletionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  profileCompletionSubtitle: {
+    fontSize: 14,
+  },
+  completeProfileButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  completeProfileButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 }); 

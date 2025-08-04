@@ -10,7 +10,7 @@ export interface Post {
   image?: any;
   images?: any[];
   video?: {
-    uri: string;
+    uri: string | number;
     thumbnail: any;
     duration: string;
   };
@@ -67,11 +67,11 @@ const initialPosts: Post[] = [
     avatar: require('@/assets/images/profile-pictures/image-03.jpg'),
     company: 'Creative Studios',
     time: '15m ago',
-    content: '🎬 New tutorial alert! Just created this comprehensive guide on React Native state management. Learn how to properly handle state with hooks and context. Perfect for beginners and intermediate developers! #ReactNative #StateManagement #MobileDevelopment #CodingTutorial',
+    content: '🎬 Just created this comprehensive NetworkPro tutorial! Learn how to optimize your professional profile, connect with industry leaders, and discover amazing job opportunities. This step-by-step guide shows you how to make the most of NetworkPro\'s powerful networking features. Perfect for anyone looking to advance their career! #NetworkPro #CareerGrowth #ProfessionalNetworking #JobSearch',
     video: {
-      uri: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-      thumbnail: require('@/assets/images/profile-pictures/image-03.jpg'),
-      duration: '4:12',
+      uri: require('@/assets/videos/post-vidoes/networkpro video-1.mp4'),
+      thumbnail: require('@/assets/videos/post-vidoes/networkpro video-1.mp4'),
+      duration: '2:30',
     },
     likes: 35,
     comments: 22,
@@ -83,11 +83,11 @@ const initialPosts: Post[] = [
     avatar: require('@/assets/images/networkpro-logo.png'),
     company: 'NetworkPro App',
     time: '2h ago',
-    content: '🎬 Discover the power of professional networking with NetworkPro! Watch how our app helps you build meaningful connections, discover job opportunities, and grow your career. From smart profile matching to real-time messaging, see how NetworkPro is revolutionizing professional networking. Experience the features that make networking effortless and effective. #NetworkPro #ProfessionalNetworking #CareerGrowth #SmartConnections',
+    content: '🎬 Introducing NetworkPro - Your Ultimate Professional Networking Platform! Discover how our innovative app revolutionizes the way professionals connect, collaborate, and grow their careers. From AI-powered profile matching to real-time messaging and job discovery, NetworkPro makes professional networking effortless and effective. Join thousands of professionals who are already transforming their careers with NetworkPro! #NetworkPro #ProfessionalNetworking #CareerGrowth #Innovation',
     video: {
-      uri: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-      thumbnail: require('@/assets/images/networkpro-logo.png'),
-      duration: '2:45',
+      uri: require('@/assets/videos/post-vidoes/networkpro video-2.mp4'),
+      thumbnail: require('@/assets/videos/post-vidoes/networkpro video-2.mp4'),
+      duration: '3:15',
     },
     likes: 89,
     comments: 45,

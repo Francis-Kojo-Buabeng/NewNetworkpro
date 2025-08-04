@@ -36,79 +36,39 @@ export default function SignInScreen({ onSignIn, onJoin, onForgotPassword, onBac
 
   const handleSignIn = async () => {
     setError(null);
-    if (!email || !password) {
+    
+    if (!email.trim() || !password.trim()) {
       setError('Please enter your email and password.');
       return;
     }
+
     if (!validateEmail(email.trim())) {
       setError('Please enter a valid email address.');
       return;
     }
+
     setLoading(true);
+    
     try {
-      console.log('SignInScreen - Attempting login with email:', email.trim());
+      const response = await loginUser({ email: email.trim(), password });
+      console.log('SignInScreen - Login successful');
       
-      const credentials: AuthRequest = {
-        email: email.trim(),
-        password: password
-      };
+      // Store the user session
+      userSessionService.setUserSession(response.token, email.trim());
       
-      const authResponse = await loginUser(credentials);
-      console.log('SignInScreen - Login successful, token received');
-      
-      // Store the token for future API calls
-      // In a real app, you'd store this securely (e.g., in AsyncStorage with encryption)
-      if (authResponse.token) {
-        // You can store the token here for future authenticated requests
-        console.log('SignInScreen - Token stored for future requests');
-        
-        // Extract email from JWT token
-        const userEmail = getEmailFromToken(authResponse.token);
-        console.log('SignInScreen - Extracted email from token:', userEmail);
-        
-        // Use email from token or fallback to form email
-        const emailToUse = userEmail || email.trim();
-        console.log('SignInScreen - Using email:', emailToUse);
-        
-        if (emailToUse) {
-          // Find the user's profile by email
-          try {
-            const userProfile = await findUserProfileByEmail(emailToUse);
-            if (userProfile) {
-              console.log('SignInScreen - User profile found:', userProfile);
-              console.log('SignInScreen - User has name:', userProfile.firstName, userProfile.lastName);
-              console.log('SignInScreen - User has avatar:', userProfile.profilePictureUrl);
-              console.log('SignInScreen - User has header image:', userProfile.headerImage);
-              
-              // Store user session with profile data
-              userSessionService.setUserSession(authResponse.token, emailToUse, userProfile);
-              console.log('SignInScreen - User session stored with complete profile');
-              
-              onSignIn(true); // Profile is complete
-            } else {
-              console.log('SignInScreen - No user profile found for email, redirecting to profile setup');
-              
-              // Store user session without profile data (for new users)
-              userSessionService.setUserSession(authResponse.token, emailToUse, null);
-              console.log('SignInScreen - User session stored without profile (new user)');
-              
-              onSignIn(false); // Profile is not complete
-            }
-          } catch (profileError) {
-            console.log('SignInScreen - Error finding user profile:', profileError);
-            onSignIn(false); // Assume profile is not complete
-          }
-        } else {
-          console.log('SignInScreen - Could not extract email from token');
-          onSignIn(false); // Assume profile is not complete
-        }
+      // Get user email from token
+      const userEmail = getEmailFromToken(response.token);
+      if (userEmail) {
+        console.log('SignInScreen - User email from token:', userEmail);
+        onSignIn(false); // Pass profileComplete status
       } else {
-        console.log('SignInScreen - No token received from authentication');
-        onSignIn(false); // Assume profile is not complete
+        console.error('SignInScreen - Could not extract email from token');
+        setError('Login successful but could not retrieve user information.');
       }
     } catch (err: any) {
-      console.error('SignInScreen - Login error:', err);
-      setError(err.message || 'Network error. Please check your connection and try again.');
+      console.error('SignInScreen - Login failed:', err);
+      // Use on-screen error for validation and auth errors
+      setError(err.message || 'Invalid email or password. Please try again.');
     } finally {
       setLoading(false);
     }

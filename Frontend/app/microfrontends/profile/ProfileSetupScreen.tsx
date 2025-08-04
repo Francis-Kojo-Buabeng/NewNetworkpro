@@ -6,7 +6,7 @@ import { useSkills } from '../../../hooks/useSkills';
 import { skillsUtils } from '../../../services/skillsAPI';
 import { useCurrentTheme, getLogoAsset, useTheme } from '../../../contexts/ThemeContext';
 import ThemedLogo from '../../../components/ThemedLogo';
-import { createUserProfile, uploadProfilePicture } from '../../../services/userAPI';
+import { createOrGetUserProfile, uploadProfilePicture, updateUserProfile } from '../../../services/userAPI';
 import Snackbar from '../../../components/Snackbar';
 import AvatarActionModal from '../../../components/AvatarActionModal';
 import { useEffect } from 'react';
@@ -154,7 +154,7 @@ export default function ProfileSetupScreen({ onContinue }: ProfileSetupScreenPro
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       setLoading(false);
-      setSnackbar({ visible: true, message: 'Permission to access gallery is required!', type: 'error' });
+      setErrors({ fullName: 'Permission to access gallery is required!' });
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -178,7 +178,7 @@ export default function ProfileSetupScreen({ onContinue }: ProfileSetupScreenPro
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
       setLoading(false);
-      setSnackbar({ visible: true, message: 'Permission to access camera is required!', type: 'error' });
+      setErrors({ fullName: 'Permission to access camera is required!' });
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
@@ -211,8 +211,16 @@ export default function ProfileSetupScreen({ onContinue }: ProfileSetupScreenPro
 
     setLoading(true);
     try {
-      // Create user profile first
-      const createdProfile = await createUserProfile({
+      // Get user email from session
+      const userEmail = userSessionService.getUserEmail();
+      console.log('ProfileSetupScreen - User email from session:', userEmail);
+
+      // First, create or get the user profile by email
+      let createdProfile = await createOrGetUserProfile(userEmail || '');
+      console.log('ProfileSetupScreen - Created/retrieved profile:', createdProfile);
+
+      // Update the profile with the user's information
+      const updatedProfile = await updateUserProfile(createdProfile.id, {
         firstName,
         lastName,
         headline: profession,
@@ -222,17 +230,19 @@ export default function ProfileSetupScreen({ onContinue }: ProfileSetupScreenPro
         // Add more fields as needed
       });
 
+      console.log('ProfileSetupScreen - Updated profile:', updatedProfile);
+
       // If avatar is selected, upload it
       let uploadedImageUrl = null;
       if (avatarUri) {
         try {
           console.log('ProfileSetupScreen - Uploading avatar:', avatarUri);
-          console.log('ProfileSetupScreen - Created profile ID:', createdProfile.id);
-          uploadedImageUrl = await uploadProfilePicture(createdProfile.id, avatarUri);
+          console.log('ProfileSetupScreen - Profile ID:', updatedProfile.id);
+          uploadedImageUrl = await uploadProfilePicture(updatedProfile.id, avatarUri);
           console.log('ProfileSetupScreen - Upload successful, URL:', uploadedImageUrl);
           // Update the profile with the uploaded image URL
-          createdProfile.profilePictureUrl = uploadedImageUrl;
-          console.log('ProfileSetupScreen - Updated createdProfile:', createdProfile);
+          updatedProfile.profilePictureUrl = uploadedImageUrl;
+          console.log('ProfileSetupScreen - Updated profile with avatar:', updatedProfile);
         } catch (uploadError) {
           console.error('Failed to upload profile picture:', uploadError);
           // Continue without profile picture if upload fails
@@ -241,19 +251,19 @@ export default function ProfileSetupScreen({ onContinue }: ProfileSetupScreenPro
         console.log('ProfileSetupScreen - No avatar selected, skipping upload');
       }
 
-      console.log('ProfileSetupScreen - Final created profile:', createdProfile);
+      console.log('ProfileSetupScreen - Final updated profile:', updatedProfile);
       console.log('ProfileSetupScreen - Final uploaded image URL:', uploadedImageUrl);
       
-      // Update user session with the created profile
-      userSessionService.updateUserProfile(createdProfile);
-      console.log('ProfileSetupScreen - User session updated with new profile');
+      // Update user session with the updated profile
+      userSessionService.updateUserProfile(updatedProfile);
+      console.log('ProfileSetupScreen - User session updated with profile');
       
       setLoading(false);
-      console.log('ProfileSetupScreen - Calling onContinue with:', uploadedImageUrl, createdProfile);
-      onContinue(uploadedImageUrl, createdProfile);
+      console.log('ProfileSetupScreen - Calling onContinue with:', uploadedImageUrl, updatedProfile);
+      onContinue(uploadedImageUrl, updatedProfile);
     } catch (error: any) {
       setLoading(false);
-      setSnackbar({ visible: true, message: error.message || 'Could not create profile.', type: 'error' });
+      setErrors({ fullName: error.message || 'Could not create profile.' });
     }
   };
 

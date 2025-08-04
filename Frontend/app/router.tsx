@@ -18,6 +18,7 @@ import UserProfileScreen from './microfrontends/profile/UserProfileScreen';
 import MyProfileScreen from './microfrontends/profile/MyProfileScreen';
 import { PostsProvider } from './contexts/PostsContext';
 import { userSessionService } from '../services/userSession';
+import { USER_SERVICE_BASE_URL } from '../constants/Config';
 
 export default function Router() {
   const [currentScreen, setCurrentScreen] = useState('splash');
@@ -185,20 +186,38 @@ function RouterContent({
           processedAvatarUrl = userProfile.profilePictureUrl;
         } else if (userProfile.profilePictureUrl.startsWith('/')) {
           // Backend now returns paths like /profile-pictures/7/filename.jpg
-          processedAvatarUrl = `http://10.232.142.14:8092${userProfile.profilePictureUrl}`;
+          processedAvatarUrl = `${USER_SERVICE_BASE_URL}${userProfile.profilePictureUrl}`;
         } else {
-          processedAvatarUrl = `http://10.232.142.14:8092/profile-pictures/${userProfile.profilePictureUrl}`;
+          processedAvatarUrl = `${USER_SERVICE_BASE_URL}/profile-pictures/${userProfile.profilePictureUrl}`;
         }
         console.log('Router - Processed avatar URL for microfrontend:', processedAvatarUrl);
         setUserAvatar(processedAvatarUrl);
+      }
+
+      // Process header image URL for microfrontend screens
+      if (userProfile.headerImage) {
+        let processedHeaderUrl: string | null = null;
+        if (userProfile.headerImage.startsWith('http')) {
+          processedHeaderUrl = userProfile.headerImage;
+        } else if (userProfile.headerImage.startsWith('/')) {
+          // Backend now returns paths like /banner-images/7/filename.jpg
+          processedHeaderUrl = `${USER_SERVICE_BASE_URL}${userProfile.headerImage}`;
+        } else {
+          processedHeaderUrl = `${USER_SERVICE_BASE_URL}/banner-images/${userProfile.headerImage}`;
+        }
+        console.log('Router - Processed header URL for microfrontend:', processedHeaderUrl);
+        // Update the createdProfile with the processed header URL
+        userProfile.headerImage = processedHeaderUrl;
       }
 
       // Check if profile is complete (has firstName)
       const isComplete = userProfile.firstName && userProfile.firstName.trim() !== '';
       setIsProfileComplete(isComplete);
 
-      // Navigate based on profile completion
-      navigateWithDelay(isComplete ? 'main' : 'profilesetup');
+      // Always navigate to main screen if profile exists, regardless of completion status
+      // This allows users to use the app with incomplete profiles and complete them later
+      console.log('Router - Profile exists, navigating to main screen');
+      navigateWithDelay('main');
     } catch (error) {
       console.log('Router - No existing profile found, creating new one');
       try {
@@ -250,9 +269,9 @@ function RouterContent({
         processedAvatarUrl = avatarUri;
       } else if (avatarUri.startsWith('/')) {
         // Backend now returns paths like /profile-pictures/7/filename.jpg
-        processedAvatarUrl = `http://10.232.142.14:8092${avatarUri}`;
+        processedAvatarUrl = `${USER_SERVICE_BASE_URL}${avatarUri}`;
       } else {
-        processedAvatarUrl = `http://10.232.142.14:8092/profile-pictures/${avatarUri}`;
+        processedAvatarUrl = `${USER_SERVICE_BASE_URL}/profile-pictures/${avatarUri}`;
       }
       console.log('Router - Processed avatar URL for microfrontend:', processedAvatarUrl);
       setUserAvatar(processedAvatarUrl);
@@ -306,6 +325,7 @@ function RouterContent({
     console.log('Router - Profile Picture URL:', createdProfile.profilePictureUrl);
     console.log('Router - Header Image:', createdProfile.headerImage);
     console.log('Router - Avatar Image being passed:', createdProfile.profilePictureUrl || null);
+    console.log('Router - Banner Image being passed:', createdProfile.headerImage || null);
     
     const profile = {
       id: createdProfile.id?.toString() || '',
@@ -332,13 +352,19 @@ function RouterContent({
       <MyProfileScreen
         profile={profile}
         avatarImage={createdProfile.profilePictureUrl || null}
+        bannerImage={createdProfile.headerImage || null}
         onBack={() => {
           setShowJustCreatedProfile(false);
           setCurrentScreen('main');
         }}
         onProfileChange={updated => {
           console.log('Router - onProfileChange called with:', updated);
-          setCreatedProfile((prev: any) => ({ ...prev, ...updated, headerImage: updated.headerImage }));
+          console.log('Router - Updated headerImage:', updated.headerImage);
+          console.log('Router - Previous createdProfile:', createdProfile);
+          const newCreatedProfile = { ...createdProfile, ...updated, headerImage: updated.headerImage };
+          console.log('Router - New createdProfile:', newCreatedProfile);
+          setCreatedProfile(newCreatedProfile);
+          console.log('Router - setCreatedProfile called with new profile');
         }}
       />
     );

@@ -1,4 +1,5 @@
 import { uploadProfilePicture, deleteProfilePicture, uploadBannerImage, deleteBannerImage } from './userAPI';
+import { USER_SERVICE_BASE_URL } from '../constants/Config';
 
 export interface ImageUploadResult {
   success: boolean;
@@ -59,7 +60,8 @@ export class ImageService {
    * Get image source for React Native Image component
    */
   static getImageSource(imageUrl?: string | null, fallbackImage?: any) {
-    if (!imageUrl) {
+    // Handle null, undefined, or empty string
+    if (!imageUrl || typeof imageUrl !== 'string') {
       return fallbackImage || require('@/assets/images/Avator-Image.jpg');
     }
     
@@ -70,7 +72,7 @@ export class ImageService {
     
     // If it's a relative path, convert to full URL
     if (imageUrl.startsWith('/')) {
-      return { uri: `http://10.232.142.14:8092${imageUrl}` };
+      return { uri: `${USER_SERVICE_BASE_URL}${imageUrl}` };
     }
     
     // Fallback to default
@@ -128,7 +130,7 @@ export class ImageService {
       '/profile-pictures/6/filename.jpg',
       '/banner-images/6/filename.jpg',
       'invalid-url',
-      'https://10.232.142.14:8092/profile-pictures/6/filename.jpg'
+      `https://${USER_SERVICE_BASE_URL.replace('http://', '')}/profile-pictures/6/filename.jpg`
     ];
     
     testUrls.forEach((url, index) => {
@@ -159,8 +161,8 @@ export class ImageService {
     
     // Test 1: Backend URL format (what we expect from backend)
     const backendUrls = [
-      'http://10.232.142.14:8092/profile-pictures/6/filename.jpg',
-      'http://10.232.142.14:8092/banner-images/6/filename.jpg',
+      `${USER_SERVICE_BASE_URL}/profile-pictures/6/filename.jpg`,
+      `${USER_SERVICE_BASE_URL}/banner-images/6/filename.jpg`,
       null,
       undefined
     ];

@@ -145,10 +145,18 @@ export default function ProfileModal({
               </View>
               
               <View style={styles.profileDetails}>
-                <Text style={[styles.profileName, { color: theme.textColor }]}>
+                <Text 
+                  style={[styles.profileName, { color: theme.textColor }]}
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
+                >
                   {profile.name}
                 </Text>
-                <Text style={[styles.profileTitle, { color: theme.textSecondaryColor }]}>
+                <Text 
+                  style={[styles.profileTitle, { color: theme.textSecondaryColor }]}
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
+                >
                   {profile.title} at {profile.company}
                 </Text>
                 <Text style={[styles.profileLocation, { color: theme.textTertiaryColor }]}>
@@ -292,13 +300,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   profileName: {
-    fontSize: 24,
+    fontSize: 22, // slightly smaller for better fit
     fontWeight: '700',
     marginBottom: 4,
+    lineHeight: 26,
   },
   profileTitle: {
-    fontSize: 16,
+    fontSize: 15, // slightly smaller for better fit
     marginBottom: 4,
+    lineHeight: 18,
   },
   profileLocation: {
     fontSize: 14,

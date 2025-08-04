@@ -16,6 +16,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { AuthInput, AuthButton, BackButton } from '../../components/AuthUI';
 import { useCurrentTheme } from '../../contexts/ThemeContext';
 import Snackbar from '../../components/Snackbar';
+import { AUTH_API_BASE_URL } from '../../constants/Config';
 
 interface ForgotPasswordScreenProps {
   onBack: () => void;
@@ -24,7 +25,7 @@ interface ForgotPasswordScreenProps {
 
 const defaultOnResetPassword = async (email: string) => {
   const response = await fetch(
-    `http://10.232.142.14:8090/api/v1/authentication/send-password-reset-token?email=${encodeURIComponent(email)}`,
+    `${AUTH_API_BASE_URL}/send-password-reset-token?email=${encodeURIComponent(email)}`,
     {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -82,7 +83,8 @@ export default function ForgotPasswordScreen({ onBack, onResetPassword = default
       await onResetPassword(email.trim());
       setSnackbar({ visible: true, message: 'Reset email sent again!', type: 'success' });
     } catch (err) {
-      setError('Failed to send reset email. Please try again.');
+      // Use snackbar for network/API errors, not validation errors
+      setSnackbar({ visible: true, message: 'Failed to send reset email. Please try again.', type: 'error' });
     } finally {
       setIsLoading(false);
     }

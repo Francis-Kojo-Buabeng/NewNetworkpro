@@ -16,7 +16,6 @@ export interface Story {
 
 interface StoriesContextType {
   stories: Story[];
-  addStory: (story: Omit<Story, 'id' | 'createdAt' | 'expiresAt'>) => void;
   markStoryViewed: (storyId: string) => void;
 }
 
@@ -95,26 +94,12 @@ export const StoriesProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const addStory = (story: Omit<Story, 'id' | 'createdAt' | 'expiresAt'>) => {
-    const now = Date.now();
-    setStories((prev) => [
-      ...prev,
-      {
-        ...story,
-        id: Math.random().toString(36).substr(2, 9),
-        createdAt: now,
-        expiresAt: now + 24 * 60 * 60 * 1000,
-        viewed: false,
-      },
-    ]);
-  };
-
   const markStoryViewed = (storyId: string) => {
     setStories((prev) => prev.map((s) => s.id === storyId ? { ...s, viewed: true } : s));
   };
 
   return (
-    <StoriesContext.Provider value={{ stories, addStory, markStoryViewed }}>
+    <StoriesContext.Provider value={{ stories, markStoryViewed }}>
       {children}
     </StoriesContext.Provider>
   );

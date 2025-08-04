@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ImageUrlUtils } from './imageOptimization';
+import { USER_SERVICE_BASE_URL } from '../constants/Config';
 
 interface CachedImage {
   url: string;
@@ -44,14 +45,14 @@ export class ImageCacheService {
         // New backend format: /userId/filename
         // Determine if it's a profile picture or banner image based on the path
         if (relativePath.includes('/profile-pictures/') || relativePath.includes('/banner-images/')) {
-          fullUrl = `http://10.232.142.14:8092${relativePath}`;
+          fullUrl = `${USER_SERVICE_BASE_URL}${relativePath}`;
         } else {
           // Assume it's a profile picture by default
-          fullUrl = `http://10.232.142.14:8092/profile-pictures${relativePath}`;
+          fullUrl = `${USER_SERVICE_BASE_URL}/profile-pictures${relativePath}`;
         }
       } else {
         // Assume it's a profile picture by default
-        fullUrl = `http://10.232.142.14:8092/profile-pictures/${relativePath}`;
+        fullUrl = `${USER_SERVICE_BASE_URL}/profile-pictures/${relativePath}`;
       }
       
       console.log('  fullUrl:', fullUrl);
@@ -67,7 +68,7 @@ export class ImageCacheService {
         return fullUrl;
       } else {
         // Try alternative URL construction
-        const alternativeUrl = 'http://10.232.142.14:8092' + relativePath;
+        const alternativeUrl = USER_SERVICE_BASE_URL + relativePath;
         console.log('  trying alternativeUrl:', alternativeUrl);
         const isAlternativeAccessible = await this.testImageAccessibility(alternativeUrl);
         console.log('  isAlternativeAccessible:', isAlternativeAccessible);

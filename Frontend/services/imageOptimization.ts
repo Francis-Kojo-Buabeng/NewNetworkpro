@@ -1,4 +1,5 @@
 import * as ImageManipulator from 'expo-image-manipulator';
+import { USER_SERVICE_BASE_URL } from '../constants/Config';
 
 export interface ImageOptimizationOptions {
   maxWidth?: number;
@@ -184,7 +185,7 @@ export class ImageOptimizationService {
  * Image URL utilities for LinkedIn-style handling
  */
 export class ImageUrlUtils {
-  private static readonly BASE_URL = 'http://10.232.142.14:8092';
+  private static readonly BASE_URL = USER_SERVICE_BASE_URL;
 
   /**
    * Construct full image URL from relative path

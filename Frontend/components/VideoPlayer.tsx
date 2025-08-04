@@ -5,7 +5,7 @@ import { useCurrentTheme } from '../contexts/ThemeContext';
 import { useVideoPlayer, VideoView } from 'expo-video';
 
 interface VideoPlayerProps {
-  source: string;
+  source: string | number;
   style?: any;
   onClose?: () => void;
 }

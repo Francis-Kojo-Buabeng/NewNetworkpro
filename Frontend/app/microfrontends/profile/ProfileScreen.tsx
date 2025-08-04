@@ -27,6 +27,7 @@ export function ProfileLayout({ profile, children, onBack, theme, bannerImage, o
   const [searchQuery, setSearchQuery] = useState('');
   const [snackbar, setSnackbar] = useState<{ visible: boolean; message: string; type?: 'success' | 'error' | 'info' }>({ visible: false, message: '', type: 'info' });
   const [avatarActionModalVisible, setAvatarActionModalVisible] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -139,10 +140,18 @@ export function ProfileLayout({ profile, children, onBack, theme, bannerImage, o
 
   // Banner image logic
   const handleBannerPress = async () => {
-    if (!onBannerChange) return;
+    console.log('ProfileScreen - handleBannerPress called');
+    console.log('ProfileScreen - onBannerChange available:', !!onBannerChange);
+    console.log('ProfileScreen - Profile ID:', profile.id);
+    console.log('ProfileScreen - Current bannerImage prop:', bannerImage);
+    if (!onBannerChange) {
+      console.log('ProfileScreen - No onBannerChange callback, returning early');
+      return;
+    }
+    setError(null);
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      setSnackbar({ visible: true, message: 'Permission to access gallery is required!', type: 'error' });
+      setError('Permission to access gallery is required!');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -151,24 +160,30 @@ export function ProfileLayout({ profile, children, onBack, theme, bannerImage, o
       aspect: [3, 1],
       quality: 1,
     });
+    console.log('ProfileScreen - Image picker result:', result);
     if (!result.canceled && result.assets && result.assets.length > 0) {
+      console.log('ProfileScreen - Starting banner upload for profile ID:', profile.id);
       try {
         const uploadResult = await ImageService.uploadBanner(profile.id, result.assets[0].uri);
+        console.log('ProfileScreen - Upload result:', uploadResult);
         if (uploadResult.success && uploadResult.url) {
+          console.log('ProfileScreen - Calling onBannerChange with URL:', uploadResult.url);
           onBannerChange(uploadResult.url);
           setSnackbar({ visible: true, message: 'Banner image uploaded successfully!', type: 'success' });
         } else {
-          setSnackbar({ visible: true, message: uploadResult.error || 'Failed to upload banner', type: 'error' });
+          setError(uploadResult.error || 'Failed to upload banner');
         }
       } catch (error: any) {
-        setSnackbar({ visible: true, message: error.message || 'Failed to upload banner image', type: 'error' });
+        console.error('ProfileScreen - Banner upload error:', error);
+        setError(error.message || 'Failed to upload banner image');
       }
     }
   };
 
   const handleDeleteBannerImage = async () => {
+    setError(null);
     if (!profile.id) {
-      setSnackbar({ visible: true, message: 'Profile ID not found', type: 'error' });
+      setError('Profile ID not found');
       return;
     }
 
@@ -180,10 +195,10 @@ export function ProfileLayout({ profile, children, onBack, theme, bannerImage, o
         }
         setSnackbar({ visible: true, message: 'Banner image removed successfully!', type: 'success' });
       } else {
-        setSnackbar({ visible: true, message: deleteResult.error || 'Failed to remove banner', type: 'error' });
+        setError(deleteResult.error || 'Failed to remove banner');
       }
     } catch (error: any) {
-      setSnackbar({ visible: true, message: error.message || 'Failed to remove banner image', type: 'error' });
+      setError(error.message || 'Failed to remove banner image');
     }
   };
 
@@ -225,9 +240,10 @@ export function ProfileLayout({ profile, children, onBack, theme, bannerImage, o
 
   // Handler for choosing from gallery
   const handleChooseFromGallery = async () => {
+    setError(null);
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      setSnackbar({ visible: true, message: 'Permission to access gallery is required!', type: 'error' });
+      setError('Permission to access gallery is required!');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -243,9 +259,10 @@ export function ProfileLayout({ profile, children, onBack, theme, bannerImage, o
 
   // Handler for taking photo
   const handleTakePhoto = async () => {
+    setError(null);
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      setSnackbar({ visible: true, message: 'Permission to access camera is required!', type: 'error' });
+      setError('Permission to access camera is required!');
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
@@ -260,8 +277,9 @@ export function ProfileLayout({ profile, children, onBack, theme, bannerImage, o
 
   // Handler for uploading profile picture
   const handleUploadProfilePicture = async (imageUri: string) => {
+    setError(null);
     if (!profile.id) {
-      setSnackbar({ visible: true, message: 'Profile ID not found', type: 'error' });
+      setError('Profile ID not found');
       return;
     }
 
@@ -273,17 +291,18 @@ export function ProfileLayout({ profile, children, onBack, theme, bannerImage, o
         }
         setSnackbar({ visible: true, message: 'Profile picture uploaded successfully!', type: 'success' });
       } else {
-        setSnackbar({ visible: true, message: uploadResult.error || 'Failed to upload avatar', type: 'error' });
+        setError(uploadResult.error || 'Failed to upload avatar');
       }
     } catch (error: any) {
-      setSnackbar({ visible: true, message: error.message || 'Failed to upload profile picture', type: 'error' });
+      setError(error.message || 'Failed to upload profile picture');
     }
   };
 
   // Handler for removing profile picture
   const handleRemoveProfilePicture = async () => {
+    setError(null);
     if (!profile.id) {
-      setSnackbar({ visible: true, message: 'Profile ID not found', type: 'error' });
+      setError('Profile ID not found');
       return;
     }
 
@@ -295,10 +314,10 @@ export function ProfileLayout({ profile, children, onBack, theme, bannerImage, o
         }
         setSnackbar({ visible: true, message: 'Profile picture removed successfully!', type: 'success' });
       } else {
-        setSnackbar({ visible: true, message: deleteResult.error || 'Failed to remove avatar', type: 'error' });
+        setError(deleteResult.error || 'Failed to remove avatar');
       }
     } catch (error: any) {
-      setSnackbar({ visible: true, message: error.message || 'Failed to remove profile picture', type: 'error' });
+      setError(error.message || 'Failed to remove profile picture');
     }
   };
 
@@ -340,12 +359,24 @@ export function ProfileLayout({ profile, children, onBack, theme, bannerImage, o
         {/* Header Image */}
         <TouchableOpacity 
           disabled={!onBannerChange} 
-          onPress={handleBannerPress} 
+          onPress={() => {
+            console.log('ProfileScreen - Banner TouchableOpacity pressed');
+            console.log('ProfileScreen - onBannerChange available:', !!onBannerChange);
+            handleBannerPress();
+          }} 
           onLongPress={onBannerChange && (bannerImage || profile.headerImage) ? handleDeleteBannerImage : undefined}
           activeOpacity={onBannerChange ? 0.7 : 1}
         >
           {(() => {
             const bannerUri = bannerImage || profile.headerImage;
+            
+            // Debug logging for banner image
+            console.log('ProfileScreen - Banner image debug:', {
+              bannerImage,
+              profileHeaderImage: profile.headerImage,
+              bannerUri,
+              processedSource: ImageService.getImageSource(bannerUri, require('@/assets/images/banner-images/banner-01.jpg'))
+            });
             
             return (
           <View style={styles.headerImageContainer}>
@@ -369,7 +400,7 @@ export function ProfileLayout({ profile, children, onBack, theme, bannerImage, o
             ) : (
               <View style={[styles.headerImage, { backgroundColor: theme.surfaceColor }]}>
                 <MaterialCommunityIcons name="image" size={48} color={theme.textTertiaryColor} style={styles.headerPlaceholder} />
-                <Text style={{ color: theme.textTertiaryColor, marginTop: 8 }}>No Banner Image</Text>
+                <Text style={{ color: theme.textTertiaryColor, marginTop: 8 }}>Tap to Add Banner Image</Text>
                     {onBannerChange && (
                       <View style={[styles.bannerAddOverlay, { backgroundColor: 'rgba(0, 0, 0, 0.1)' }]}>
                         <MaterialCommunityIcons name="plus" size={24} color={theme.textSecondaryColor} />
@@ -386,7 +417,22 @@ export function ProfileLayout({ profile, children, onBack, theme, bannerImage, o
         <View style={styles.profileInfo}>
           <View style={styles.avatarContainer}>
             {(() => {
-              const avatarSource = ImageService.getImageSource(avatarImage || profile.profilePictureUrl);
+              // Handle both require() statements and URL strings
+              let avatarSource;
+              if (avatarImage || profile.profilePictureUrl) {
+                // If it's a require() statement (number), use it directly
+                if (typeof (avatarImage || profile.profilePictureUrl) === 'number') {
+                  avatarSource = avatarImage || profile.profilePictureUrl;
+                } else {
+                  // If it's a string URL, process it through ImageService
+                  avatarSource = ImageService.getImageSource(avatarImage || profile.profilePictureUrl);
+                }
+              } else {
+                // Fallback to default avatar
+                avatarSource = require('@/assets/images/Avator-Image.jpg');
+              }
+              
+              console.log('ProfileLayout - Avatar source:', avatarSource);
               
               return (
                 <ImageWithFallback
@@ -414,6 +460,13 @@ export function ProfileLayout({ profile, children, onBack, theme, bannerImage, o
             <Text style={[styles.profileCompany, { color: theme.primaryColor }]}>{profile.company}</Text>
             <Text style={[styles.profileLocation, { color: theme.textSecondaryColor }]}>{profile.location}</Text>
           </View>
+
+          {/* Error Display */}
+          {error && (
+            <View style={styles.errorContainer}>
+              <Text style={[styles.errorText, { color: theme.dangerColor }]}>{error}</Text>
+            </View>
+          )}
 
           {/* Action Buttons before tabs */}
           {children}
@@ -779,5 +832,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1,
+  },
+  errorContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
+  errorText: {
+    fontSize: 14,
+    textAlign: 'center',
+    fontWeight: '500',
   },
 }); 
